@@ -833,7 +833,7 @@
                             <button class="share-btn" onclick="shareQuestion('${doc.id}', 'twitter')"><i class="material-icons">send</i> Twitter</button>
                             <button class="share-btn" onclick="shareQuestion('${doc.id}', 'whatsapp')"><i class="material-icons">chat</i> WhatsApp</button>
                         </div>
-                        <div class="action-buttons" id="question-actions-${doc.id}" ${auth.currentUser && auth.currentUser.uid === question.userId ? '' : 'style="display:none"'}>
+                        <div class="action-buttons" id="question-actions-${doc.id}" ${auth.currentUser && (auth.currentUser.uid === question.userId || auth.currentUser.displayName === question.user) ? '' : 'style="display:none"'}>
                             <button class="edit-btn" onclick="showEditQuestionForm('${doc.id}')"><i class="material-icons">edit</i> Edit</button>
                             <button class="delete-btn" onclick="deleteQuestion('${doc.id}')"><i class="material-icons">delete</i> Delete</button>
                         </div>
@@ -920,7 +920,7 @@
                                 <span class="vote-count" id="answer-votes-${doc.id}">${answer.votes || 0}</span>
                                 <button class="vote-btn" onclick="voteAnswer('${doc.id}', 'down')"><i class="material-icons">thumb_down</i></button>
                             </div>
-                            <div class="action-buttons" id="answer-actions-${doc.id}" ${auth.currentUser && auth.currentUser.uid === answer.userId ? '' : 'style="display:none"'}>
+                            <div class="action-buttons" id="answer-actions-${doc.id}" ${auth.currentUser && (auth.currentUser.uid === answer.userId || auth.currentUser.displayName === answer.user) ? '' : 'style="display:none"'}>
                                 <button class="edit-btn" onclick="showEditAnswerForm('${doc.id}')"><i class="material-icons">edit</i> Edit</button>
                                 <button class="delete-btn" onclick="deleteAnswer('${doc.id}', '${questionId}')"><i class="material-icons">delete</i> Delete</button>
                             </div>
@@ -1178,9 +1178,16 @@
                 const questionData = questionSnap.data();
                 
                 // Verify the current user is the author
-                if (questionData.userId !== user.uid) {
+                if (!(questionData.userId === user.uid || questionData.user === user.displayName)) {
                     alert("You can only edit your own questions.");
                     return;
+                }
+                
+                // If this is an older question without userId, add it now
+                if (!questionData.userId) {
+                    await updateDoc(questionRef, {
+                        userId: user.uid
+                    });
                 }
                 
                 // Update the question
@@ -1221,9 +1228,17 @@
                 const questionData = questionSnap.data();
                 
                 // Verify the current user is the author
-                if (questionData.userId !== user.uid) {
+                if (!(questionData.userId === user.uid || questionData.user === user.displayName)) {
                     alert("You can only delete your own questions.");
                     return;
+                }
+                
+                // If this is an older question without userId, add it now
+                if (!questionData.userId) {
+                    // Update the question with userId before deleting
+                    await updateDoc(questionRef, {
+                        userId: user.uid
+                    });
                 }
                 
                 // Delete the question
@@ -1269,9 +1284,16 @@
                 const answerData = answerSnap.data();
                 
                 // Verify the current user is the author
-                if (answerData.userId !== user.uid) {
+                if (!(answerData.userId === user.uid || answerData.user === user.displayName)) {
                     alert("You can only edit your own answers.");
                     return;
+                }
+                
+                // If this is an older answer without userId, add it now
+                if (!answerData.userId) {
+                    await updateDoc(answerRef, {
+                        userId: user.uid
+                    });
                 }
                 
                 // Update the answer
@@ -1312,9 +1334,16 @@
                 const answerData = answerSnap.data();
                 
                 // Verify the current user is the author
-                if (answerData.userId !== user.uid) {
+                if (!(answerData.userId === user.uid || answerData.user === user.displayName)) {
                     alert("You can only delete your own answers.");
                     return;
+                }
+                
+                // If this is an older answer without userId, add it now
+                if (!answerData.userId) {
+                    await updateDoc(answerRef, {
+                        userId: user.uid
+                    });
                 }
                 
                 // Delete the answer
@@ -1345,7 +1374,7 @@
                     const actionButtons = document.getElementById(`question-actions-${questionId}`);
                     
                     if (actionButtons) {
-                        actionButtons.style.display = user.uid === questionData.userId ? 'flex' : 'none';
+                        actionButtons.style.display = (user.uid === questionData.userId || user.displayName === questionData.user) ? 'flex' : 'none';
                     }
                 }
             });
@@ -1362,7 +1391,7 @@
                     const actionButtons = document.getElementById(`answer-actions-${answerId}`);
                     
                     if (actionButtons) {
-                        actionButtons.style.display = user.uid === answerData.userId ? 'flex' : 'none';
+                        actionButtons.style.display = (user.uid === answerData.userId || user.displayName === answerData.user) ? 'flex' : 'none';
                     }
                 }
             });

@@ -333,7 +333,6 @@
         .profile-header {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
         }
         
         .profile-avatar {
@@ -346,89 +345,6 @@
         
         .profile-info h3 {
             margin: 0 0 10px 0;
-        }
-        
-        .profile-stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .profile-tabs {
-            display: flex;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 20px;
-        }
-        
-        .profile-tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-        }
-        
-        .profile-tab.active {
-            border-bottom-color: var(--accent-color);
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-        
-        .profile-content {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .profile-activity-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .profile-activity-item:last-child {
-            border-bottom: none;
-        }
-        
-        .activity-date {
-            font-size: 12px;
-            color: #888;
-        }
-        
-        /* Email notification styles */
-        .notification-settings {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #f8f8f8;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-        
-        .settings-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .settings-option {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        
-        .settings-option label {
-            margin-left: 8px;
-            cursor: pointer;
         }
         
         /* Styles for edit and delete buttons */
@@ -516,7 +432,7 @@
                 <li data-aos="fade-right" data-aos-delay="300"><a href="index.html#media"><i class="material-icons">perm_media</i>Media</a></li>
                 <li data-aos="fade-right" data-aos-delay="400"><a href="index.html#donation"><i class="material-icons">volunteer_activism</i>Donation</a></li>
                 <li data-aos="fade-right" data-aos-delay="500"><a href="index.html#contact-us"><i class="material-icons">contact_mail</i>Contact Us</a></li>
-                <li data-aos="fade-right" data-aos-delay="600"><a href="#question-and-answer" class="active"><i class="material-icons">question_answer</i>Question And Answer</a></li>
+                <li data-aos="fade-right" data-aos-delay="600"><a href="question-and-answer.html" class="active"><i class="material-icons">question_answer</i>Question And Answer</a></li>
             </ul>
             <div class="social-links" data-aos="fade-up">
                 <a href="#" class="social-icon"><i class="fab fa-facebook"></i></a>
@@ -553,45 +469,7 @@
                                     <div class="profile-info">
                                         <h3 id="profileName"></h3>
                                         <p id="profileEmail"></p>
-                                        
-                                        <div class="notification-settings">
-                                            <div class="settings-title">Email Notification Settings:</div>
-                                            <div class="settings-option">
-                                                <input type="checkbox" id="notifyAnswers" checked>
-                                                <label for="notifyAnswers">Notify me when my questions are answered</label>
-                                            </div>
-                                            <div class="settings-option">
-                                                <input type="checkbox" id="notifyVotes" checked>
-                                                <label for="notifyVotes">Notify me about votes on my content</label>
-                                            </div>
-                                            <button id="saveNotificationSettings" class="btn" style="margin-top: 10px;">Save Settings</button>
-                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div class="profile-stats">
-                                    <div class="stat-item">
-                                        <div id="questionsCount" class="stat-value">0</div>
-                                        <div class="stat-label">Questions</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div id="answersCount" class="stat-value">0</div>
-                                        <div class="stat-label">Answers</div>
-                                    </div>
-                                    <div class="stat-item">
-                                        <div id="votesCount" class="stat-value">0</div>
-                                        <div class="stat-label">Votes</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="profile-tabs">
-                                    <div class="profile-tab active" data-tab="questions">My Questions</div>
-                                    <div class="profile-tab" data-tab="answers">My Answers</div>
-                                    <div class="profile-tab" data-tab="activity">Recent Activity</div>
-                                </div>
-                                
-                                <div class="profile-content" id="profileContent">
-                                    <!-- Content will be loaded dynamically -->
                                 </div>
                             </div>
                 
@@ -694,8 +572,6 @@
                         email: user.email,
                         displayName: user.displayName,
                         photoURL: user.photoURL,
-                        notifyAnswers: true,
-                        notifyVotes: true,
                         lastLogin: new Date()
                     });
                 } else {
@@ -725,252 +601,23 @@
             document.getElementById('profileEmail').textContent = user.email;
             document.getElementById('profileAvatar').src = user.photoURL || 'https://via.placeholder.com/80';
             
-            // Load user's notification preferences
+            // Load user's data
             const userRef = doc(db, "users", user.uid);
             const userSnap = await getDoc(userRef);
             
-            if (userSnap.exists()) {
-                const userData = userSnap.data();
-                document.getElementById('notifyAnswers').checked = userData.notifyAnswers ?? true;
-                document.getElementById('notifyVotes').checked = userData.notifyVotes ?? true;
-            }
-            
-            // Load statistics
-            await updateUserStats(user.uid);
-            
-            // Load user's questions by default
-            await loadUserQuestions(user.uid);
-            
-            // Set up tab event listeners
-            document.querySelectorAll('.profile-tab').forEach(tab => {
-                tab.addEventListener('click', async () => {
-                    // Remove active class from all tabs
-                    document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-                    
-                    // Add active class to clicked tab
-                    tab.classList.add('active');
-                    
-                    const tabType = tab.getAttribute('data-tab');
-                    const profileContent = document.getElementById('profileContent');
-                    
-                    // Clear current content
-                    profileContent.innerHTML = '<div class="loading-indicator"><i class="material-icons">hourglass_empty</i> Loading...</div>';
-                    
-                    // Load content based on selected tab
-                    switch (tabType) {
-                        case 'questions':
-                            await loadUserQuestions(user.uid);
-                            break;
-                        case 'answers':
-                            await loadUserAnswers(user.uid);
-                            break;
-                        case 'activity':
-                            await loadUserActivity(user.uid);
-                            break;
-                    }
-                });
-            });
-            
-            // Set up notification settings save
-            document.getElementById('saveNotificationSettings').addEventListener('click', async () => {
-                const notifyAnswers = document.getElementById('notifyAnswers').checked;
-                const notifyVotes = document.getElementById('notifyVotes').checked;
-                
+            if (!userSnap.exists()) {
                 await updateDoc(userRef, {
-                    notifyAnswers,
-                    notifyVotes
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    lastLogin: new Date()
                 });
-                
-                showNotification("Settings Saved", "Your notification preferences have been updated!");
-            });
-        }
-        
-        // Update user stats
-        async function updateUserStats(userId) {
-            // Count questions
-            const questionsQuery = query(
-                collection(db, "questions"),
-                orderBy("timestamp", "desc")
-            );
-            const questionsSnapshot = await getDocs(questionsQuery);
-            let questionCount = 0;
-            let totalVotes = 0;
-            
-            questionsSnapshot.forEach(doc => {
-                const question = doc.data();
-                if (question.user === auth.currentUser.displayName) {
-                    questionCount++;
-                    totalVotes += question.votes || 0;
-                }
-            });
-            
-            // Count answers
-            const answersQuery = query(
-                collection(db, "answers"),
-                orderBy("timestamp", "desc")
-            );
-            const answersSnapshot = await getDocs(answersQuery);
-            let answerCount = 0;
-            
-            answersSnapshot.forEach(doc => {
-                const answer = doc.data();
-                if (answer.user === auth.currentUser.displayName) {
-                    answerCount++;
-                    totalVotes += answer.votes || 0;
-                }
-            });
-            
-            // Update UI
-            document.getElementById('questionsCount').textContent = questionCount;
-            document.getElementById('answersCount').textContent = answerCount;
-            document.getElementById('votesCount').textContent = totalVotes;
-        }
-        
-        // Load user's questions
-        async function loadUserQuestions(userId) {
-            const profileContent = document.getElementById('profileContent');
-            profileContent.innerHTML = '';
-            
-            const questionsQuery = query(
-                collection(db, "questions"), 
-                orderBy("timestamp", "desc")
-            );
-            const questionsSnapshot = await getDocs(questionsQuery);
-            
-            let userQuestions = [];
-            questionsSnapshot.forEach(doc => {
-                const question = doc.data();
-                if (question.user === auth.currentUser.displayName) {
-                    userQuestions.push({
-                        id: doc.id,
-                        ...question
-                    });
-                }
-            });
-            
-            if (userQuestions.length === 0) {
-                profileContent.innerHTML = '<p>You haven\'t asked any questions yet.</p>';
-                return;
+            } else {
+                // Update last login time
+                await updateDoc(userRef, {
+                    lastLogin: new Date()
+                });
             }
-            
-            userQuestions.forEach(question => {
-                profileContent.innerHTML += `
-                    <div class="profile-activity-item">
-                        <p>${question.text}</p>
-                        <div class="activity-date">Posted on ${new Date(question.timestamp.toDate()).toLocaleString()}</div>
-                        <button class="btn" onclick="scrollToQuestion('${question.id}')">View Question</button>
-                    </div>
-                `;
-            });
-        }
-        
-        // Load user's answers
-        async function loadUserAnswers(userId) {
-            const profileContent = document.getElementById('profileContent');
-            profileContent.innerHTML = '';
-            
-            const answersQuery = query(
-                collection(db, "answers"),
-                orderBy("timestamp", "desc")
-            );
-            const answersSnapshot = await getDocs(answersQuery);
-            
-            let userAnswers = [];
-            answersSnapshot.forEach(doc => {
-                const answer = doc.data();
-                if (answer.user === auth.currentUser.displayName) {
-                    userAnswers.push({
-                        id: doc.id,
-                        ...answer
-                    });
-                }
-            });
-            
-            if (userAnswers.length === 0) {
-                profileContent.innerHTML = '<p>You haven\'t answered any questions yet.</p>';
-                return;
-            }
-            
-            userAnswers.forEach(answer => {
-                profileContent.innerHTML += `
-                    <div class="profile-activity-item">
-                        <p>${answer.text}</p>
-                        <div class="activity-date">Posted on ${new Date(answer.timestamp.toDate()).toLocaleString()}</div>
-                        <button class="btn" onclick="scrollToQuestion('${answer.questionId}')">View Question</button>
-                    </div>
-                `;
-            });
-        }
-        
-        // Load user activity
-        async function loadUserActivity(userId) {
-            const profileContent = document.getElementById('profileContent');
-            profileContent.innerHTML = '<p>Loading recent activity...</p>';
-            
-            // This is a simplified version - in a real app, you'd have a dedicated activity log
-            // For now, we'll just combine questions and answers by date
-            
-            const activities = [];
-            
-            // Get questions
-            const questionsQuery = query(
-                collection(db, "questions"),
-                orderBy("timestamp", "desc")
-            );
-            const questionsSnapshot = await getDocs(questionsQuery);
-            
-            questionsSnapshot.forEach(doc => {
-                const question = doc.data();
-                if (question.user === auth.currentUser.displayName) {
-                    activities.push({
-                        id: doc.id,
-                        type: 'question',
-                        text: question.text,
-                        timestamp: question.timestamp,
-                        questionId: doc.id
-                    });
-                }
-            });
-            
-            // Get answers
-            const answersQuery = query(
-                collection(db, "answers"),
-                orderBy("timestamp", "desc")
-            );
-            const answersSnapshot = await getDocs(answersQuery);
-            
-            answersSnapshot.forEach(doc => {
-                const answer = doc.data();
-                if (answer.user === auth.currentUser.displayName) {
-                    activities.push({
-                        id: doc.id,
-                        type: 'answer',
-                        text: answer.text,
-                        timestamp: answer.timestamp,
-                        questionId: answer.questionId
-                    });
-                }
-            });
-            
-            // Sort by timestamp (newest first)
-            activities.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
-            
-            if (activities.length === 0) {
-                profileContent.innerHTML = '<p>No recent activity found.</p>';
-                return;
-            }
-            
-            profileContent.innerHTML = '';
-            activities.slice(0, 10).forEach(activity => {
-                profileContent.innerHTML += `
-                    <div class="profile-activity-item">
-                        <p><strong>${activity.type === 'question' ? 'Asked a question' : 'Answered a question'}</strong></p>
-                        <p>${activity.text}</p>
-                        <div class="activity-date">${new Date(activity.timestamp.toDate()).toLocaleString()}</div>
-                        <button class="btn" onclick="scrollToQuestion('${activity.questionId}')">View Question</button>
-                    </div>
-                `;
-            });
         }
         
         // Function to scroll to a specific question
@@ -995,10 +642,6 @@
                 if (!userSnap.exists()) return;
                 
                 const userData = userSnap.data();
-                
-                // Check user's notification preferences
-                if (type === 'answer' && !userData.notifyAnswers) return;
-                if (type === 'vote' && !userData.notifyVotes) return;
                 
                 // In a real-world application, you would integrate with a service like SendGrid, Mailgun, etc.
                 // For this example, we'll log the notification to the console and show a fake successful notification
@@ -1242,7 +885,7 @@
                     
                     // Send email notification to question author (if they're not the same person answering)
                     if (questionData.user !== user.displayName) {
-                        // In a real application, you would look up the user ID by their display name
+                        // In a real-world application, you would look up the user ID by their display name
                         // For this demo, we're simulating the notification
                         console.log(`Sending notification about new answer to ${questionData.user}`);
                         

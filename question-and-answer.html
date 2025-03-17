@@ -1015,136 +1015,152 @@
             document.getElementById('notification').classList.remove('show');
         };
 
-        // Vote functions
-        window.voteQuestion = async (questionId, voteType) => {
-            const user = auth.currentUser;
-            if (!user) {
-                alert("Please login to vote");
-                return;
-            }
+        // Vote functions - copy and paste these into your question-and-answer.html file
+window.voteQuestion = async (questionId, voteType) => {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Please login to vote");
+        return;
+    }
 
-            const questionRef = doc(db, "questions", questionId);
-            const questionSnap = await getDoc(questionRef);
-            
-            if (questionSnap.exists()) {
-                const questionData = questionSnap.data();
-                const currentVotes = questionData.votes || 0;
-                const userVotes = questionData.userVotes || {};
-                
-                // Check if user already voted
-                if (userVotes[user.uid] === voteType) {
-                    // User is removing their vote
-                    delete userVotes[user.uid];
-                    await updateDoc(questionRef, {
-                        votes: voteType === 'up' ? currentVotes - 1 : currentVotes + 1,
-                        userVotes: userVotes
-                    });
-                } else if (userVotes[user.uid]) {
-                    // User is changing their vote
-                    userVotes[user.uid] = voteType;
-                    const voteDiff = voteType === 'up' ? 2 : -2; // +2 for down->up, -2 for up->down
-                    await updateDoc(questionRef, {
-                        votes: currentVotes + voteDiff,
-                        userVotes: userVotes
-                    });
-                } else {
-                    // New vote
-                    userVotes[user.uid] = voteType;
-                    await updateDoc(questionRef, {
-                        votes: voteType === 'up' ? currentVotes + 1 : currentVotes - 1,
-                        userVotes: userVotes
-                    });
-                }
-                
-                // Show notification for votes
-                showNotification(
-                    "Vote Recorded", 
-                    `You ${voteType === 'up' ? 'upvoted' : 'downvoted'} this question.`
-                );
-                
-                // Update UI
-                document.getElementById(`question-votes-${questionId}`).textContent = 
-                    questionData.votes + (voteType === 'up' ? 1 : -1);
-                
-                // Update vote button styles
-                const upBtn = document.querySelector(`button[onclick="voteQuestion('${questionId}', 'up')"]`);
-                const downBtn = document.querySelector(`button[onclick="voteQuestion('${questionId}', 'down')"]`);
-                
-                upBtn.classList.remove('upvoted');
-                downBtn.classList.remove('downvoted');
-                
-                if (userVotes[user.uid] === 'up') {
-                    upBtn.classList.add('upvoted');
-                } else if (userVotes[user.uid] === 'down') {
-                    downBtn.classList.add('downvoted');
-                }
-            }
-        };
+    try {
+        const questionRef = doc(db, "questions", questionId);
+        const questionSnap = await getDoc(questionRef);
         
-        window.voteAnswer = async (answerId, voteType) => {
-            const user = auth.currentUser;
-            if (!user) {
-                alert("Please login to vote");
-                return;
-            }
-
-            const answerRef = doc(db, "answers", answerId);
-            const answerSnap = await getDoc(answerRef);
+        if (questionSnap.exists()) {
+            const questionData = questionSnap.data();
+            const currentVotes = questionData.votes || 0;
+            const userVotes = questionData.userVotes || {};
             
-            if (answerSnap.exists()) {
-                const answerData = answerSnap.data();
-                const currentVotes = answerData.votes || 0;
-                const userVotes = answerData.userVotes || {};
-                
-                // Check if user already voted
-                if (userVotes[user.uid] === voteType) {
-                    // User is removing their vote
-                    delete userVotes[user.uid];
-                    await updateDoc(answerRef, {
-                        votes: voteType === 'up' ? currentVotes - 1 : currentVotes + 1,
-                        userVotes: userVotes
-                    });
-                } else if (userVotes[user.uid]) {
-                    // User is changing their vote
-                    userVotes[user.uid] = voteType;
-                    const voteDiff = voteType === 'up' ? 2 : -2; // +2 for down->up, -2 for up->down
-                    await updateDoc(answerRef, {
-                        votes: currentVotes + voteDiff,
-                        userVotes: userVotes
-                    });
-                } else {
-                    // New vote
-                    userVotes[user.uid] = voteType;
-                    await updateDoc(answerRef, {
-                        votes: voteType === 'up' ? currentVotes + 1 : currentVotes - 1,
-                        userVotes: userVotes
-                    });
-                }
-                
-                // Show notification for votes
-                showNotification(
-                    "Vote Recorded", 
-                    `You ${voteType === 'up' ? 'upvoted' : 'downvoted'} this answer.`
-                );
-                
-                // Update UI
-                document.getElementById(`answer-votes-${answerId}`).textContent = 
-                    answerData.votes + (voteType === 'up' ? 1 : -1);
-                
-                // Update vote button styles
-                const upBtn = document.querySelector(`button[onclick="voteAnswer('${answerId}', 'up')"]`);
-                const downBtn = document.querySelector(`button[onclick="voteAnswer('${answerId}', 'down')"]`);
-                
-                upBtn.classList.remove('upvoted');
-                downBtn.classList.remove('downvoted');
-                
-                if (userVotes[user.uid] === 'up') {
-                    upBtn.classList.add('upvoted');
-                } else if (userVotes[user.uid] === 'down') {
-                    downBtn.classList.add('downvoted');
-                }
+            console.log("Voting on question:", questionId);
+            console.log("Current user:", user.uid);
+            
+            // Check if user already voted
+            if (userVotes[user.uid] === voteType) {
+                // User is removing their vote
+                delete userVotes[user.uid];
+                await updateDoc(questionRef, {
+                    votes: voteType === 'up' ? currentVotes - 1 : currentVotes + 1,
+                    userVotes: userVotes
+                });
+            } else if (userVotes[user.uid]) {
+                // User is changing their vote
+                userVotes[user.uid] = voteType;
+                const voteDiff = voteType === 'up' ? 2 : -2; // +2 for down->up, -2 for up->down
+                await updateDoc(questionRef, {
+                    votes: currentVotes + voteDiff,
+                    userVotes: userVotes
+                });
+            } else {
+                // New vote
+                userVotes[user.uid] = voteType;
+                await updateDoc(questionRef, {
+                    votes: voteType === 'up' ? currentVotes + 1 : currentVotes - 1,
+                    userVotes: userVotes
+                });
             }
-        };
+            
+            // Show notification for votes
+            showNotification(
+                "Vote Recorded", 
+                `You ${voteType === 'up' ? 'upvoted' : 'downvoted'} this question.`
+            );
+            
+            // Update UI
+            document.getElementById(`question-votes-${questionId}`).textContent = 
+                questionData.votes + (voteType === 'up' ? 1 : -1);
+            
+            // Update vote button styles
+            const upBtn = document.querySelector(`button[onclick="voteQuestion('${questionId}', 'up')"]`);
+            const downBtn = document.querySelector(`button[onclick="voteQuestion('${questionId}', 'down')"]`);
+            
+            upBtn.classList.remove('upvoted');
+            downBtn.classList.remove('downvoted');
+            
+            if (userVotes[user.uid] === 'up') {
+                upBtn.classList.add('upvoted');
+            } else if (userVotes[user.uid] === 'down') {
+                downBtn.classList.add('downvoted');
+            }
+        }
+    } catch (error) {
+        console.error("Error voting on question:", error);
+        alert("Error recording vote: " + error.message);
+    }
+};
+
+window.voteAnswer = async (answerId, voteType) => {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Please login to vote");
+        return;
+    }
+
+    try {
+        const answerRef = doc(db, "answers", answerId);
+        const answerSnap = await getDoc(answerRef);
+        
+        if (answerSnap.exists()) {
+            const answerData = answerSnap.data();
+            const currentVotes = answerData.votes || 0;
+            const userVotes = answerData.userVotes || {};
+            
+            console.log("Voting on answer:", answerId);
+            console.log("Current user:", user.uid);
+            
+            // Check if user already voted
+            if (userVotes[user.uid] === voteType) {
+                // User is removing their vote
+                delete userVotes[user.uid];
+                await updateDoc(answerRef, {
+                    votes: voteType === 'up' ? currentVotes - 1 : currentVotes + 1,
+                    userVotes: userVotes
+                });
+            } else if (userVotes[user.uid]) {
+                // User is changing their vote
+                userVotes[user.uid] = voteType;
+                const voteDiff = voteType === 'up' ? 2 : -2; // +2 for down->up, -2 for up->down
+                await updateDoc(answerRef, {
+                    votes: currentVotes + voteDiff,
+                    userVotes: userVotes
+                });
+            } else {
+                // New vote
+                userVotes[user.uid] = voteType;
+                await updateDoc(answerRef, {
+                    votes: voteType === 'up' ? currentVotes + 1 : currentVotes - 1,
+                    userVotes: userVotes
+                });
+            }
+            
+            // Show notification for votes
+            showNotification(
+                "Vote Recorded", 
+                `You ${voteType === 'up' ? 'upvoted' : 'downvoted'} this answer.`
+            );
+            
+            // Update UI
+            document.getElementById(`answer-votes-${answerId}`).textContent = 
+                answerData.votes + (voteType === 'up' ? 1 : -1);
+            
+            // Update vote button styles
+            const upBtn = document.querySelector(`button[onclick="voteAnswer('${answerId}', 'up')"]`);
+            const downBtn = document.querySelector(`button[onclick="voteAnswer('${answerId}', 'down')"]`);
+            
+            upBtn.classList.remove('upvoted');
+            downBtn.classList.remove('downvoted');
+            
+            if (userVotes[user.uid] === 'up') {
+                upBtn.classList.add('upvoted');
+            } else if (userVotes[user.uid] === 'down') {
+                downBtn.classList.add('downvoted');
+            }
+        }
+    } catch (error) {
+        console.error("Error voting on answer:", error);
+        alert("Error recording vote: " + error.message);
+    }
+};
 
         // Auto-save draft functionality
         let draftTimer;

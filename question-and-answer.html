@@ -538,7 +538,7 @@
         // Import Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, startAfter, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, startAfter, deleteDoc, setDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // Firebase Config
         const firebaseConfig = {
@@ -694,6 +694,9 @@
                 // Load user profile data
                 loadUserProfile(user);
                 
+                // Fix all existing content
+                fixUserIdOnExistingContent();
+                
                 // Update action buttons visibility
                 updateActionButtonsVisibility();
             } else {
@@ -704,6 +707,48 @@
                 profileSection.style.display = "none";
             }
         });
+
+        // Function to fix userId on existing content
+        async function fixUserIdOnExistingContent() {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            console.log("Fixing userId on existing content for user:", user.displayName);
+            
+            try {
+                // Fix questions
+                const q = query(collection(db, "questions"), where("user", "==", user.displayName));
+                const questionDocs = await getDocs(q);
+                
+                questionDocs.forEach(async (doc) => {
+                    const data = doc.data();
+                    if (!data.userId) {
+                        console.log("Adding userId to question:", doc.id);
+                        await updateDoc(doc.ref, {
+                            userId: user.uid
+                        });
+                    }
+                });
+                
+                // Fix answers
+                const a = query(collection(db, "answers"), where("user", "==", user.displayName));
+                const answerDocs = await getDocs(a);
+                
+                answerDocs.forEach(async (doc) => {
+                    const data = doc.data();
+                    if (!data.userId) {
+                        console.log("Adding userId to answer:", doc.id);
+                        await updateDoc(doc.ref, {
+                            userId: user.uid
+                        });
+                    }
+                });
+                
+                console.log("Fixed userId on all existing content");
+            } catch (error) {
+                console.error("Error fixing userId:", error);
+            }
+        }
 
         // Search functionality
         document.getElementById("searchQuestions").addEventListener("input", function() {
@@ -1220,35 +1265,57 @@
                 return;
             }
 
-            // Get question reference
-            const questionRef = doc(db, "questions", questionId);
-            const questionSnap = await getDoc(questionRef);
-            
-            if (questionSnap.exists()) {
-                const questionData = questionSnap.data();
+            try {
+                // Get question reference
+                const questionRef = doc(db, "questions", questionId);
+                const questionSnap = await getDoc(questionRef);
                 
-                // Verify the current user is the author
-                if (!(questionData.userId === user.uid || questionData.user === user.displayName)) {
-                    alert("You can only delete your own questions.");
-                    return;
+                if (questionSnap.exists()) {
+                    const questionData = questionSnap.data();
+                    
+                    console.log("Deleting question:", questionId);
+                    console.log("Current user:", user.uid);
+                    console.log("Question data:", questionData);
+                    
+                    // Verify the current user is the author
+                    if (!(questionData.userId === user.uid || questionData.user === user.displayName)) {
+                        alert("You can only delete your own questions.");
+                        return;
+                    }
+                    
+                    // If this is an older question without userId, add it now
+                    if (!questionData.userId) {
+                        console.log("Adding userId to question before deleting");
+                        try {
+                            await updateDoc(questionRef, {
+                                userId: user.uid
+                            });
+                            console.log("userId added successfully");
+                        } catch (error) {
+                            console.error("Error adding userId:", error);
+                            alert("Error updating question. Please try again.");
+                            return;
+                        }
+                    }
+                    
+                    // Delete the question
+                    try {
+                        await deleteDoc(questionRef);
+                        console.log("Question deleted successfully");
+                        
+                        // Remove from UI
+                        const questionElement = document.getElementById(`question-${questionId}`);
+                        questionElement.remove();
+                        
+                        showNotification("Question Deleted", "Your question has been successfully deleted!");
+                    } catch (error) {
+                        console.error("Error deleting question:", error);
+                        alert("Error deleting question: " + error.message);
+                    }
                 }
-                
-                // If this is an older question without userId, add it now
-                if (!questionData.userId) {
-                    // Update the question with userId before deleting
-                    await updateDoc(questionRef, {
-                        userId: user.uid
-                    });
-                }
-                
-                // Delete the question
-                await deleteDoc(questionRef);
-                
-                // Remove from UI
-                const questionElement = document.getElementById(`question-${questionId}`);
-                questionElement.remove();
-                
-                showNotification("Question Deleted", "Your question has been successfully deleted!");
+            } catch (error) {
+                console.error("Error in deleteQuestion:", error);
+                alert("An error occurred: " + error.message);
             }
         };
 
@@ -1314,7 +1381,7 @@
             }
         };
 
-        window.deleteAnswer = async (answerId, questionId) => {
+        window.deleteAnswer = async (answerId) => {
             const user = auth.currentUser;
             if (!user) {
                 alert("Please login to delete your answer.");
@@ -1326,34 +1393,57 @@
                 return;
             }
 
-            // Get answer reference
-            const answerRef = doc(db, "answers", answerId);
-            const answerSnap = await getDoc(answerRef);
-            
-            if (answerSnap.exists()) {
-                const answerData = answerSnap.data();
+            try {
+                // Get answer reference
+                const answerRef = doc(db, "answers", answerId);
+                const answerSnap = await getDoc(answerRef);
                 
-                // Verify the current user is the author
-                if (!(answerData.userId === user.uid || answerData.user === user.displayName)) {
-                    alert("You can only delete your own answers.");
-                    return;
+                if (answerSnap.exists()) {
+                    const answerData = answerSnap.data();
+                    
+                    console.log("Deleting answer:", answerId);
+                    console.log("Current user:", user.uid);
+                    console.log("Answer data:", answerData);
+                    
+                    // Verify the current user is the author
+                    if (!(answerData.userId === user.uid || answerData.user === user.displayName)) {
+                        alert("You can only delete your own answers.");
+                        return;
+                    }
+                    
+                    // If this is an older answer without userId, add it now
+                    if (!answerData.userId) {
+                        console.log("Adding userId to answer before deleting");
+                        try {
+                            await updateDoc(answerRef, {
+                                userId: user.uid
+                            });
+                            console.log("userId added successfully to answer");
+                        } catch (error) {
+                            console.error("Error adding userId to answer:", error);
+                            alert("Error updating answer. Please try again.");
+                            return;
+                        }
+                    }
+                    
+                    // Delete the answer
+                    try {
+                        await deleteDoc(answerRef);
+                        console.log("Answer deleted successfully");
+                        
+                        // Remove from UI
+                        const answerElement = document.getElementById(`answer-${answerId}`);
+                        answerElement.remove();
+                        
+                        showNotification("Answer Deleted", "Your answer has been successfully deleted!");
+                    } catch (error) {
+                        console.error("Error deleting answer:", error);
+                        alert("Error deleting answer: " + error.message);
+                    }
                 }
-                
-                // If this is an older answer without userId, add it now
-                if (!answerData.userId) {
-                    await updateDoc(answerRef, {
-                        userId: user.uid
-                    });
-                }
-                
-                // Delete the answer
-                await deleteDoc(answerRef);
-                
-                // Remove from UI
-                const answerElement = document.getElementById(`answer-${answerId}`);
-                answerElement.remove();
-                
-                showNotification("Answer Deleted", "Your answer has been successfully deleted!");
+            } catch (error) {
+                console.error("Error in deleteAnswer:", error);
+                alert("An error occurred: " + error.message);
             }
         };
 
@@ -1480,6 +1570,62 @@
 
         // Load Initial Questions
         loadQuestions();
+        
+        // 🔹 Answer Submit Function
+        document.getElementById('answerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Check if user is logged in
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Please login to submit an answer");
+                return;
+            }
+            
+            // Get form values
+            const questionId = document.getElementById('questionId').value;
+            const answerText = document.getElementById('answerText').value;
+            
+            if (!answerText.trim()) {
+                alert("Please enter an answer");
+                return;
+            }
+            
+            const timestamp = new Date();
+            
+            try {
+                console.log("Submitting answer with user data:", {
+                    user: user.displayName,
+                    userId: user.uid
+                });
+                
+                // Add answer to Firestore
+                const docRef = await addDoc(collection(db, "answers"), {
+                    questionId: questionId,
+                    text: answerText,
+                    user: user.displayName,
+                    userId: user.uid,
+                    userPhoto: user.photoURL || 'https://via.placeholder.com/40',
+                    timestamp: timestamp
+                });
+                
+                console.log("Answer added with ID:", docRef.id);
+                
+                // Clear form
+                document.getElementById('answerText').value = '';
+                
+                // Close modal
+                document.getElementById('answerModal').style.display = 'none';
+                
+                // Refresh answers
+                loadAnswersForQuestion(questionId);
+                
+                showNotification("Answer Submitted", "Your answer has been submitted successfully!");
+            } catch (error) {
+                console.error("Error adding answer:", error);
+                alert("Error submitting answer: " + error.message);
+            }
+        });
     </script>
 </body>
 </html>

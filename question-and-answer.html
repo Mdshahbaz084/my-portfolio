@@ -537,8 +537,8 @@
     <script type="module">
         // Import Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, startAfter, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, startAfter, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // Firebase Config
         const firebaseConfig = {
@@ -568,7 +568,7 @@
                 const userSnap = await getDoc(userRef);
                 
                 if (!userSnap.exists()) {
-                    await updateDoc(userRef, {
+                    await setDoc(userRef, {
                         email: user.email,
                         displayName: user.displayName,
                         photoURL: user.photoURL,
@@ -606,7 +606,7 @@
             const userSnap = await getDoc(userRef);
             
             if (!userSnap.exists()) {
-                await updateDoc(userRef, {
+                await setDoc(userRef, {
                     email: user.email,
                     displayName: user.displayName,
                     photoURL: user.photoURL,
@@ -742,6 +742,7 @@
                 await addDoc(collection(db, "questions"), {
                     text: questionText,
                     user: user.displayName,
+                    userId: user.uid,
                     timestamp: new Date(),
                     votes: 0,
                     userVotes: {}
@@ -832,7 +833,7 @@
                             <button class="share-btn" onclick="shareQuestion('${doc.id}', 'twitter')"><i class="material-icons">send</i> Twitter</button>
                             <button class="share-btn" onclick="shareQuestion('${doc.id}', 'whatsapp')"><i class="material-icons">chat</i> WhatsApp</button>
                         </div>
-                        <div class="action-buttons" id="question-actions-${doc.id}" ${auth.currentUser && auth.currentUser.displayName === question.user ? '' : 'style="display:none"'}>
+                        <div class="action-buttons" id="question-actions-${doc.id}" ${auth.currentUser && auth.currentUser.uid === question.userId ? '' : 'style="display:none"'}>
                             <button class="edit-btn" onclick="showEditQuestionForm('${doc.id}')"><i class="material-icons">edit</i> Edit</button>
                             <button class="delete-btn" onclick="deleteQuestion('${doc.id}')"><i class="material-icons">delete</i> Delete</button>
                         </div>
@@ -869,6 +870,7 @@
                     questionId: questionId,
                     text: answerText,
                     user: user.displayName,
+                    userId: user.uid,
                     timestamp: new Date(),
                     votes: 0,
                     userVotes: {}
@@ -918,7 +920,7 @@
                                 <span class="vote-count" id="answer-votes-${doc.id}">${answer.votes || 0}</span>
                                 <button class="vote-btn" onclick="voteAnswer('${doc.id}', 'down')"><i class="material-icons">thumb_down</i></button>
                             </div>
-                            <div class="action-buttons" id="answer-actions-${doc.id}" ${auth.currentUser && auth.currentUser.displayName === answer.user ? '' : 'style="display:none"'}>
+                            <div class="action-buttons" id="answer-actions-${doc.id}" ${auth.currentUser && auth.currentUser.uid === answer.userId ? '' : 'style="display:none"'}>
                                 <button class="edit-btn" onclick="showEditAnswerForm('${doc.id}')"><i class="material-icons">edit</i> Edit</button>
                                 <button class="delete-btn" onclick="deleteAnswer('${doc.id}', '${questionId}')"><i class="material-icons">delete</i> Delete</button>
                             </div>
@@ -1176,7 +1178,7 @@
                 const questionData = questionSnap.data();
                 
                 // Verify the current user is the author
-                if (questionData.user !== user.displayName) {
+                if (questionData.userId !== user.uid) {
                     alert("You can only edit your own questions.");
                     return;
                 }
@@ -1219,7 +1221,7 @@
                 const questionData = questionSnap.data();
                 
                 // Verify the current user is the author
-                if (questionData.user !== user.displayName) {
+                if (questionData.userId !== user.uid) {
                     alert("You can only delete your own questions.");
                     return;
                 }
@@ -1267,7 +1269,7 @@
                 const answerData = answerSnap.data();
                 
                 // Verify the current user is the author
-                if (answerData.user !== user.displayName) {
+                if (answerData.userId !== user.uid) {
                     alert("You can only edit your own answers.");
                     return;
                 }
@@ -1310,7 +1312,7 @@
                 const answerData = answerSnap.data();
                 
                 // Verify the current user is the author
-                if (answerData.user !== user.displayName) {
+                if (answerData.userId !== user.uid) {
                     alert("You can only delete your own answers.");
                     return;
                 }
@@ -1343,7 +1345,7 @@
                     const actionButtons = document.getElementById(`question-actions-${questionId}`);
                     
                     if (actionButtons) {
-                        actionButtons.style.display = user.displayName === questionData.user ? 'flex' : 'none';
+                        actionButtons.style.display = user.uid === questionData.userId ? 'flex' : 'none';
                     }
                 }
             });
@@ -1360,7 +1362,7 @@
                     const actionButtons = document.getElementById(`answer-actions-${answerId}`);
                     
                     if (actionButtons) {
-                        actionButtons.style.display = user.displayName === answerData.user ? 'flex' : 'none';
+                        actionButtons.style.display = user.uid === answerData.userId ? 'flex' : 'none';
                     }
                 }
             });

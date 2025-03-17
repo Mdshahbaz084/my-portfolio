@@ -153,7 +153,7 @@
             color: #777;
             display: flex;
             align-items: center;
-            padding: 5px;
+            padding: 8px;
             border-radius: 4px;
             transition: var(--transition);
         }
@@ -163,7 +163,7 @@
         }
         
         .vote-btn.upvoted {
-            color: #2ecc71;
+            color: var(--accent-color);
         }
         
         .vote-btn.downvoted {
@@ -173,6 +173,8 @@
         .vote-count {
             font-weight: 600;
             margin: 0 5px;
+            min-width: 20px;
+            text-align: center;
         }
         
         .pagination {
@@ -212,7 +214,8 @@
         .notification {
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
             background-color: var(--primary-color);
             color: white;
             padding: 15px 20px;
@@ -220,13 +223,14 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             z-index: 1000;
             transition: all 0.3s ease;
-            transform: translateY(100px);
             opacity: 0;
             max-width: 350px;
+            width: 90%;
+            text-align: center;
         }
         
         .notification.show {
-            transform: translateY(0);
+            transform: translateX(-50%) translateY(0);
             opacity: 1;
         }
         
@@ -415,6 +419,111 @@
             border-radius: 4px;
             padding: 5px 10px;
             cursor: pointer;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .qa-container {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            #questionForm {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .input, .btn {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .question {
+                padding: 12px;
+            }
+            
+            .vote-buttons {
+                justify-content: center;
+                margin: 10px auto;
+            }
+            
+            .vote-btn {
+                padding: 10px;  /* Larger touch targets for mobile */
+            }
+            
+            .question-metadata, .answer-metadata {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .question-actions, .answer-actions {
+                margin-top: 10px;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 5px;
+            }
+            
+            .share-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+                margin: 10px 0;
+            }
+            
+            .share-btn, .edit-btn, .delete-btn {
+                margin: 5px;
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .search-form {
+                flex-direction: column;
+                margin-bottom: 15px;
+            }
+            
+            .search-input, .search-select, .search-btn {
+                width: 100%;
+                margin: 5px 0;
+                box-sizing: border-box;
+            }
+            
+            .answers {
+                padding-left: 10px;
+            }
+            
+            .notification {
+                width: 85%;
+                max-width: 300px;
+            }
+            
+            .user-profile-section {
+                flex-direction: column;
+            }
+        }
+        
+        .question-interactions, .answer-interactions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0;
+            gap: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .question-interactions, .answer-interactions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .vote-buttons {
+                justify-content: center;
+                margin: 10px auto;
+            }
+            
+            .vote-btn {
+                padding: 10px;  /* Larger touch targets for mobile */
+            }
         }
     </style>
 </head>
@@ -1003,12 +1112,16 @@
             document.getElementById('notification-title').textContent = title;
             document.getElementById('notification-message').textContent = message;
             const notification = document.getElementById('notification');
+            
+            // Force a reflow to ensure animation works properly
+            notification.offsetHeight;
+            
             notification.classList.add('show');
             
-            // Auto hide after 5 seconds
+            // Auto-hide after 3 seconds
             setTimeout(() => {
-                notification.classList.remove('show');
-            }, 5000);
+                closeNotification();
+            }, 3000);
         };
         
         window.closeNotification = () => {

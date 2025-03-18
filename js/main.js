@@ -29,6 +29,83 @@ document.addEventListener('DOMContentLoaded', () => {
     showSlides(slideIndex);
     // Start automatic slideshow
     startSlideTimer();
+    
+    // Image loading and connection speed detection
+    const loadingPlaceholder = document.getElementById('mediaLoadingPlaceholder');
+    const slideshowContainer = document.querySelector('.slideshow-container');
+    const slowConnectionMessage = document.querySelector('.slow-connection-message');
+    const images = document.querySelectorAll('.slideshow-container img');
+    let loadedImages = 0;
+    let loadingStartTime = Date.now();
+    let slowConnectionThreshold = 3000; // 3 seconds threshold for slow connection
+
+    // Initially hide the slow connection message
+    slowConnectionMessage.style.display = 'none';
+
+    // Check for slow connection after threshold
+    setTimeout(function() {
+        if (loadedImages < images.length) {
+            // Show slow connection message
+            slowConnectionMessage.style.display = 'block';
+            
+            // Make other sections accessible by auto-scrolling down a bit
+            setTimeout(() => {
+                window.scrollBy({
+                    top: 100,
+                    behavior: 'smooth'
+                });
+            }, 2000);
+        }
+    }, slowConnectionThreshold);
+
+    // Load low-quality placeholder images first
+    images.forEach(function(img) {
+        // Store original high-quality image URL
+        const highQualitySrc = img.src;
+        
+        // Create load event handler
+        img.onload = function() {
+            loadedImages++;
+            
+            // When all images are loaded, hide the loading placeholder
+            if (loadedImages === images.length) {
+                loadingPlaceholder.style.display = 'none';
+                slideshowContainer.style.opacity = '1';
+            }
+        };
+
+        // Create error event handler
+        img.onerror = function() {
+            // If image fails to load, increment counter and display fallback
+            loadedImages++;
+            img.src = 'image/icon madrsa.jpg'; // Fallback image
+            img.alt = 'Image could not be loaded';
+            
+            if (loadedImages === images.length) {
+                loadingPlaceholder.style.display = 'none';
+                slideshowContainer.style.opacity = '1';
+            }
+        };
+
+        // Simulate progressive loading by setting a smaller version first if available
+        // In a real implementation, you would have actual smaller versions of these images
+        img.src = highQualitySrc;
+    });
+});
+
+// Network state detection
+window.addEventListener('online', function() {
+    const errorMessages = document.querySelectorAll('.error-loading-message');
+    errorMessages.forEach(msg => msg.style.display = 'none');
+});
+
+window.addEventListener('offline', function() {
+    const loadingPlaceholder = document.getElementById('mediaLoadingPlaceholder');
+    const offlineMessage = document.createElement('p');
+    offlineMessage.className = 'error-loading-message';
+    offlineMessage.textContent = 'You are currently offline. Please check your internet connection.';
+    offlineMessage.style.color = 'red';
+    loadingPlaceholder.appendChild(offlineMessage);
 });
 
 // Next/previous controls
@@ -65,6 +142,10 @@ function showSlides(n) {
     // Show the current slide and highlight the current dot
     if (slides.length > 0 && slideIndex <= slides.length) {
         slides[slideIndex-1].style.display = "block";
+        
+        // Make sure slideshow is visible (in case it was still hidden by loading)
+        const slideshowContainer = document.querySelector('.slideshow-container');
+        slideshowContainer.style.opacity = '1';
     }
     
     if (dots.length > 0 && slideIndex <= dots.length) {
@@ -203,8 +284,74 @@ document.querySelectorAll('.section, .service-item, .donation-card, .contact-car
 // Handle donation button clicks
 document.querySelectorAll('.donate-btn').forEach(button => {
     button.addEventListener('click', (e) => {
-        e.preventDefault();
-        const donationPage = button.getAttribute('href');
+        const donationPage = button.getAttribute('href') || 'donation.html';
         window.open(donationPage, '_blank');
     });
 });
+
+// Website Sharing Functions
+function shareOnFacebook() {
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent(document.title);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&t=${title}`, '_blank');
+}
+
+function shareOnWhatsApp() {
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent(document.title);
+    window.open(`https://api.whatsapp.com/send?text=${title} ${url}`, '_blank');
+}
+
+function shareOnTwitter() {
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent(document.title);
+    window.open(`https://twitter.com/intent/tweet?url=${url}&text=${title}`, '_blank');
+}
+
+function copyToClipboard() {
+    const url = window.location.href;
+    
+    // Modern approach using Clipboard API
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url)
+            .then(() => showCopyMessage('URL copied to clipboard!'))
+            .catch(err => showCopyMessage('Failed to copy URL: ' + err));
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            const msg = successful ? 'URL copied to clipboard!' : 'Failed to copy URL';
+            showCopyMessage(msg);
+        } catch (err) {
+            showCopyMessage('Failed to copy URL: ' + err);
+        }
+        
+        document.body.removeChild(textArea);
+    }
+}
+
+function showCopyMessage(message) {
+    // Create and show a temporary message
+    const messageElement = document.createElement('div');
+    messageElement.className = 'copy-message';
+    messageElement.textContent = message;
+    
+    // Add the message to the body
+    document.body.appendChild(messageElement);
+    
+    // Remove the message after 3 seconds
+    setTimeout(() => {
+        if (messageElement.parentNode) {
+            document.body.removeChild(messageElement);
+        }
+    }, 3000);
+}
